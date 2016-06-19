@@ -47,9 +47,4 @@ class Collection extends ArrayObject
             return $res;
         }
     }
-
-    function join($separator = '')
-    {
-        return implode($separator, (array)$this);
-    }
 }
