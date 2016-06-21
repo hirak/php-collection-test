@@ -5,14 +5,10 @@ class Collection extends ArrayObject
 {
     function map($fn)
     {
-        $arr = [];
         if (!is_callable($fn)) {
             $fn = Lambda::create('$_', $fn, true);
         }
-        foreach ($this as $i => $v) {
-            $arr[$i] = $fn($v);
-        }
-        return new self($arr);
+        return new self(array_map($fn, (array)$this));
     }
 
     function filter($fn)
@@ -30,12 +26,6 @@ class Collection extends ArrayObject
         $func = 'array_' . $method;
         if (!function_exists($func)) {
             throw new \BadMethodCallException("func is not exists.");
-        }
-
-        foreach ($args as $i => $a) {
-            if ($a instanceof self) {
-                $args[$i] = (array)$a;
-            }
         }
 
         $args = array_merge([(array)$this], $args);
