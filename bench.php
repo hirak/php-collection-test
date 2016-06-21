@@ -24,6 +24,14 @@ bench('array', function(){
         ->sum();
 });
 
+bench('array2', function(){
+    (new Collection(EXAMPLE_ARR))
+        ->filter(function($_) { return $_ % 2 === 0; })
+        ->map(function($_) { return $_ ** 2; })
+        ->filter(function($_) { return $_ > 20;})
+        ->sum();
+});
+
 bench('lazy', function(){
     (new LazyCollection(new ArrayIterator(EXAMPLE_ARR)))
         ->filter('$_ % 2 === 0')
