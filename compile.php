@@ -1,7 +1,6 @@
 <?php
-require_once __DIR__ . '/lambda.php';
 
-class CompileCollection
+class CompileCollection implements IteratorAggregate
 {
     private $ops = [];
 
@@ -24,21 +23,58 @@ class CompileCollection
         return $this;
     }
 
-    function compile()
+    function reduce($fn, $initial = null)
     {
-        $codes = $this->ops;
-        array_unshift($codes, 'return static function($seed) { foreach ($seed as $_) {');
-        $codes[]  = 'yield $_;';
-        $codes[]  = '}};';
-        $code = implode("\n", $codes);
+        $ops = $this->ops;
+        $before = '$_carry = ' . var_export($initial) . ';';
+        $ops[] = '$_carry = ' . $fn . ';';
+        $after = '$_result = $_carry;';
+        return self::evaluate($this->seed, $this->compile($ops), $before, $after);
 
-        return eval($code);
+    }
+
+    private static function compile($ops)
+    {
+        return 'foreach ($_seed as $_key => $_) {'
+            . implode("\n", $ops)
+            . '}';
+    }
+
+    public function getIterator()
+    {
+        $ops = $this->ops;
+        $ops[] = 'yield $_key => $_;';
+        $gen = self::evaluate(
+            $this->_seed,
+            $this->compile($ops),
+            '$_result = static function() use($_seed){',
+            '};'
+        );
+        return $gen();
+    }
+
+    private static function evaluate($_seed, $_code, $_before, $_after)
+    {
+        $_result = null;
+        eval("$_before \n $_code \n $_after");
+        return $_result;
     }
 
     function sum()
     {
-        $gen = $this->compile();
-        $arr = iterator_to_array($gen($this->seed));
-        return array_sum($arr);
+        $ops = $this->ops;
+        $before = '$_result = 0;';
+        $ops[] = '$_result += $_;';
+
+        return self::evaluate($this->seed, $this->compile($ops), $before, '');
+    }
+
+    function product()
+    {
+        $ops = $this->ops;
+        $before = '$_result = 1;';
+        $ops[] = '$_result *= $_;';
+
+        return self::evaluate($this->seed, $this->compile($ops), $before, '');
     }
 }
