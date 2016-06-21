@@ -1,6 +1,7 @@
 <?php
-const LOOP = 10;
-const RANGEMAX = 100000;
+const LOOP = 100;
+const RANGEMAX = 10000;
+define('EXAMPLE_ARR', range(0, RANGEMAX));
 
 function bench($name, callable $fn) {
     echo "$name\t";
@@ -16,7 +17,7 @@ require_once __DIR__ . '/lazy.php';
 require_once __DIR__ . '/compile.php';
 
 bench('array', function(){
-    (new Collection(range(0, RANGEMAX)))
+    (new Collection(EXAMPLE_ARR))
         ->filter('$_ % 2 === 0')
         ->map('$_ ** 2')
         ->filter('$_ > 20')
@@ -24,7 +25,7 @@ bench('array', function(){
 });
 
 bench('lazy', function(){
-    (LazyCollection::range(0, RANGEMAX))
+    (new LazyCollection(new ArrayIterator(EXAMPLE_ARR)))
         ->filter('$_ % 2 === 0')
         ->map('$_ ** 2')
         ->filter('$_ > 20')
@@ -32,7 +33,7 @@ bench('lazy', function(){
 });
 
 bench('compile', function(){
-    (new CompileCollection(range(0, RANGEMAX)))
+    (new CompileCollection(EXAMPLE_ARR))
         ->filter('$_ % 2 === 0')
         ->map('$_ ** 2')
         ->filter('$_ > 20')
@@ -40,26 +41,26 @@ bench('compile', function(){
 });
 
 bench('plain', function(){
-    $mapped = [];
-    for ($v = 0; $v <= RANGEMAX; ++$v) {
+    $sum = 0;
+    foreach (EXAMPLE_ARR as $v) {
         if ($v % 2) continue;
         $v **= 2;
         if ($v <= 20) continue;
 
-        $mapped[] = $v;
+        $sum += $v;
     }
 
-    array_sum($mapped);
+    // echo $sum;
 });
 
-bench('plain+array', function(){
+bench('origin', function(){
     array_sum(
         array_filter(
             array_map(
                 function ($v) {
                     return $v ** 2;
                 },
-                array_filter(range(0, 10000), function ($v) {
+                array_filter(EXAMPLE_ARR, function ($v) {
                     return $v % 2 === 0;
                 })
             ),
