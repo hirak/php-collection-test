@@ -30,7 +30,6 @@ class CompileCollection implements IteratorAggregate
         $ops[] = '$_carry = ' . $fn . ';';
         $after = '$_result = $_carry;';
         return self::evaluate($this->seed, $this->compile($ops), $before, $after);
-
     }
 
     private static function compile($ops)
@@ -51,6 +50,18 @@ class CompileCollection implements IteratorAggregate
             '};'
         );
         return $gen();
+    }
+
+    public function toArray()
+    {
+        $ops = $this->ops;
+        $ops[] = '$_result[$_key] = $_;';
+        return self::evaluate(
+            $this->seed,
+            $this->compile($ops),
+            '$_result = [];',
+            ''
+        );
     }
 
     private static function evaluate($_seed, $_code, $_before, $_after)
